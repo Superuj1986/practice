@@ -1,9 +1,20 @@
 import os
 from sqlalchemy import create_engine
+from sqlalchemy.engine import URL, make_url
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+def _use_psycopg2(database_url: str) -> str:
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+    url = make_url(database_url)
+    if url.get_backend_name() == "postgresql" and url.drivername != "postgresql+psycopg2":
+        url = url.set(drivername="postgresql+psycopg2")
+    return url.render_as_string(hide_password=False)
 
 
 def get_environment() -> str:
@@ -13,16 +24,21 @@ def get_environment() -> str:
 def get_database_url() -> str:
     database_url = os.getenv("DATABASE_URL")
     if database_url:
-        if database_url.startswith("postgres://"):
-            database_url = database_url.replace("postgres://", "postgresql://", 1)
-        return database_url
+        return _use_psycopg2(database_url)
 
     user = os.getenv("POSTGRES_USER", "postgres")
     password = os.getenv("POSTGRES_PASSWORD", "postgres")
     host = os.getenv("POSTGRES_HOST", "localhost")
     port = os.getenv("POSTGRES_PORT", "5432")
     db = os.getenv("POSTGRES_DB", "ai_news_aggregator")
-    return f"postgresql://{user}:{password}@{host}:{port}/{db}"
+    return URL.create(
+        "postgresql+psycopg2",
+        username=user,
+        password=password,
+        host=host,
+        port=int(port),
+        database=db,
+    ).render_as_string(hide_password=False)
 
 
 def get_database_info() -> dict:

@@ -7,10 +7,9 @@ load_dotenv()
 from app.runner import run_scrapers
 from app.services.process_anthropic import process_anthropic_markdown
 from app.services.process_youtube import process_youtube_transcripts
-from app.services.process_digest import process_digests
+from app.services.process_gemini_digests import process_gemini_digests
 from app.services.process_email import send_digest_email
-from app.database.models import Base
-from app.database.connection import engine
+from app.database.create_tables import ensure_database_schema
 
 logging.basicConfig(
     level=logging.INFO,
@@ -38,9 +37,8 @@ def run_daily_pipeline(hours: int = 24, top_n: int = 10) -> dict:
     try:
         logger.info("\n[0/5] Ensuring database tables exist...")
         try:
-            with engine.connect() as conn:
-                Base.metadata.create_all(engine)
-                logger.info("✓ Database tables verified/created")
+            ensure_database_schema()
+            logger.info("✓ Database tables verified/created")
         except Exception as e:
             logger.error(f"Failed to create database tables: {e}")
             raise
@@ -69,7 +67,7 @@ def run_daily_pipeline(hours: int = 24, top_n: int = 10) -> dict:
                     f"({youtube_result['unavailable']} unavailable)")
         
         logger.info("\n[4/5] Creating digests for articles...")
-        digest_result = process_digests()
+        digest_result = process_gemini_digests()
         results["digests"] = digest_result
         logger.info(f"✓ Created {digest_result['processed']} digests "
                     f"({digest_result['failed']} failed out of {digest_result['total']} total)")
@@ -109,4 +107,3 @@ def run_daily_pipeline(hours: int = 24, top_n: int = 10) -> dict:
 if __name__ == "__main__":
     result = run_daily_pipeline(hours=24, top_n=10)
     exit(0 if result["success"] else 1)
-

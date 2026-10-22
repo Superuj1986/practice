@@ -80,6 +80,9 @@ def send_digest_email(hours: int = 24, top_n: int = 10) -> dict:
             body_text=markdown_content,
             body_html=html_content
         )
+
+        repo = Repository()
+        repo.mark_digests_as_sent([article.digest_id for article in result.articles])
         
         logger.info("Email sent successfully!")
         return {
