@@ -10,6 +10,7 @@ requires-python = ">=3.14"
 dependencies = [
     "docling>=2.141.0",
     "feedparser>=6.0.14",
+    "html-to-markdown>=3.18.5",
     "markdown>=3.11.2",
     "openai>=3.36.1",
     "psycopg2-binary>=2.9.13",

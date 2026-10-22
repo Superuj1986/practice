@@ -1,8 +1,13 @@
 from datetime import datetime, timedelta, timezone
+import logging
 from typing import List, Optional
+from urllib.request import Request, urlopen
+
 import feedparser
-from docling.document_converter import DocumentConverter
+import html_to_markdown
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 
 class AnthropicArticle(BaseModel):
@@ -21,7 +26,6 @@ class AnthropicScraper:
             "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_research.xml",
             "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_engineering.xml",
         ]
-        self.converter = DocumentConverter()
 
     def get_articles(self, hours: int = 24) -> List[AnthropicArticle]:
         now = datetime.now(timezone.utc)
@@ -57,13 +61,17 @@ class AnthropicScraper:
 
     def url_to_markdown(self, url: str) -> Optional[str]:
         try:
-            result = self.converter.convert(url)
-            return result.document.export_to_markdown()
+            request = Request(url, headers={"User-Agent": "AI-News-Aggregator/1.0"})
+            with urlopen(request, timeout=30) as response:
+                charset = response.headers.get_content_charset() or "utf-8"
+                html = response.read().decode(charset)
+            return html_to_markdown.convert(html).content
         except Exception:
+            logger.exception("Failed to convert Anthropic article to Markdown: %s", url)
             return None
 
 if __name__ == "__main__":
     scraper = AnthropicScraper()
     articles: List[AnthropicArticle] = scraper.get_articles(hours=100)
-    markdown: str = scraper.url_to_markdown(articles[1].url)
+    markdown: Optional[str] = scraper.url_to_markdown(articles[1].url)
     print(markdown)
