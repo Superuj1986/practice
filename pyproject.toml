@@ -1,0 +1,30 @@
+[project]
+name = "practice"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Superuj1986", email = "dotuanlong2209@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "docling>=2.141.0",
+    "feedparser>=6.0.14",
+    "markdown>=3.11.2",
+    "openai>=3.36.1",
+    "psycopg2-binary>=2.9.13",
+    "pydantic>=2.14.1",
+    "python-dotenv>=1.2.4",
+    "sqlalchemy>=2.1.5",
+    "youtube-transcript-api>=1.2.4",
+]
+
+[project.scripts]
+practice = "practice:main"
+
+[build-system]
+requires = ["uv_build>=0.13.4,<0.14.0"]
+build-backend = "uv_build"
+
+[tool.uv]
+package = false
